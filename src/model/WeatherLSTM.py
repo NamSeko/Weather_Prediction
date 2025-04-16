@@ -2,11 +2,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class WeatherLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, device, num_layers=1, dropout=0.3):
+    def __init__(self, input_size, hidden_size, output_size, num_layers=1, dropout=0.3):
         super(WeatherLSTM, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.device = device
         self.dropout = nn.Dropout(dropout)
 
         # LSTM layer
