@@ -4,29 +4,36 @@ import joblib
 import pandas as pd
 import os
 import warnings
+import setting
+import torch
+
+train_size = setting.train_size
+val_size = setting.val_size
+test_size = setting.test_size
+device = setting.device
 
 warnings.filterwarnings("ignore")
 
 scaler = MinMaxScaler(feature_range=(-1, 1))
-joblib.dump(scaler, '../data/scaler.save')
 
-def scale_data(df):
-    """
-    Scales the specified columns of the DataFrame to the range (-1, 1).
+def create_inout_sequences(data, seq_length):
+    data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d')
+    columns = data.columns[1:]
+    data = data[columns].copy()
+    data = data.values
+    X, y = [], []
+    L = len(data)
+    for i in range(seq_length, L):
+        train_seq = data[i-seq_length:i]
+        train_label = data[i][0]  # Assuming the label is the first feature
+        X.append(train_seq)
+        y.append(train_label)
+    X, y = np.array(X), np.array(y)
+    X_tensor = torch.tensor(X, dtype=torch.float32).to(device)
+    y_tensor = torch.tensor(y, dtype=torch.float32).to(device)
+    return X_tensor, y_tensor
 
-    Args:
-        df (pd.DataFrame): The DataFrame containing the data to scale.
-        columns_to_scale (list): List of column names to scale.
-
-    Returns:
-        pd.DataFrame: A new DataFrame with the specified columns scaled.
-    """
-    # Scale the specified columns
-    df_scaled = scaler.fit_transform(df)
-
-    return df_scaled
-
-def split_data(df, train_size=0.8, val_size=0.1, test_size=0.1, path='data/'):
+def split_data(df, train_size=train_size, val_size=val_size, test_size=test_size, path='data/'):
     """
     Splits the DataFrame into train, validation, and test sets.
 
@@ -51,13 +58,20 @@ def split_data(df, train_size=0.8, val_size=0.1, test_size=0.1, path='data/'):
     val_df = df[train_end:val_end]
     test_df = df[val_end:]
     
+    train_df = scaler.fit_transform(train_df)
+    val_df = scaler.transform(val_df)
+    test_df = scaler.transform(test_df)
+        
     if not os.path.exists(path):
         os.makedirs(path)
     
-    # Save the splits to .npy files
-    np.save(path + 'train_data.npy', train_df)
-    np.save(path + 'val_data.npy', val_df)
-    np.save(path + 'test_data.npy', test_df)
+    joblib.dump(scaler, '../data/scaler.save')
+    train_df = pd.DataFrame(train_df, columns=df.columns, index=df.index[:train_end])
+    val_df = pd.DataFrame(val_df, columns=df.columns, index=df.index[train_end:val_end])
+    test_df = pd.DataFrame(test_df, columns=df.columns, index=df.index[val_end:])
+    train_df.to_csv(path + 'train_data.csv', index=True)
+    val_df.to_csv(path + 'val_data.csv', index=True)
+    test_df.to_csv(path + 'test_data.csv', index=True)
 
 if __name__ == "__main__":
     # Daily data
@@ -67,12 +81,10 @@ if __name__ == "__main__":
     df_daily = df_daily.sort_index(ascending=True)
     
     daily_data_temp = df_daily[['temperature_2m_mean (°C)', 'soil_temperature_0_to_7cm_mean (°C)', 'et0_fao_evapotranspiration_sum (mm)', 'relative_humidity_2m_mean (%)', 'soil_moisture_0_to_7cm_mean (m³/m³)']].copy()
-    df_daily_temp_scaled = scale_data(daily_data_temp)
-    split_data(df_daily_temp_scaled, path='../data/daily/temp/')
+    split_data(daily_data_temp, path='../data/daily/temp/')
     
     daily_data_rh = df_daily[['relative_humidity_2m_mean (%)', 'soil_moisture_0_to_7cm_mean (m³/m³)', 'cloud_cover_mean (%)', 'temperature_2m_mean (°C)', 'soil_temperature_0_to_7cm_mean (°C)', 'et0_fao_evapotranspiration_sum (mm)']].copy()
-    daily_data_rh_scaled = scale_data(daily_data_rh)
-    split_data(daily_data_rh_scaled, path='../data/daily/rh/')
+    split_data(daily_data_rh, path='../data/daily/rh/')
     
     # Hourly data
     df_hourly = pd.read_csv('../data/data_hourly-2023_2025.csv', skiprows=2)
@@ -81,5 +93,4 @@ if __name__ == "__main__":
     df_hourly = df_hourly.sort_index(ascending=True)
     
     hourly_data = df_hourly[['temperature_2m (°C)', 'soil_temperature_0_to_7cm (°C)', 'et0_fao_evapotranspiration (mm)', 'relative_humidity_2m (%)', 'soil_moisture_0_to_7cm (m³/m³)']].copy()
-    df_hourly_scaled = scale_data(hourly_data)
-    split_data(df_hourly_scaled, path='../data/hourly/')
+    split_data(hourly_data, path='../data/hourly/')
