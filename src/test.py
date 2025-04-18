@@ -13,10 +13,10 @@ warnings.filterwarnings("ignore")
 device = setting.device
 print(f"Using device: {device}")
 
-data_train = pd.read_csv(setting.train_daily_temp_path)
-data_val = pd.read_csv(setting.val_daily_temp_path)
-test_data = pd.read_csv(setting.test_daily_temp_path)
-scaler = joblib.load('../data/scaler.save')
+data_train = pd.read_csv(setting.train_daily_rh_path)
+data_val = pd.read_csv(setting.val_daily_rh_path)
+test_data = pd.read_csv(setting.test_daily_rh_path)
+scaler = setting.scaler_rh
 
 train = data_train.copy()
 val = data_val.copy()
@@ -38,7 +38,7 @@ seq_length = setting.seq_length  # Length of the input sequence
 
 model = setting.LSTM_model.to(device)
 
-state_dict = torch.load('./model/weather_lstm.pth', map_location=device)
+state_dict = torch.load('./model/weather_lstm_rh.pth', map_location=device)
 model.load_state_dict(state_dict)
 model.eval()
 
@@ -58,6 +58,7 @@ with torch.no_grad():
         predictions.append(outputs.cpu().numpy())
 
 predictions = np.concatenate(predictions, axis=0)
+# print(predictions.shape)
 extra_feature = test.values[:predictions.shape[0], 1:]
 predictions = np.concatenate((predictions, extra_feature), axis=1)
 # print(predictions.shape)
@@ -97,5 +98,5 @@ plt.title('Weather Prediction')
 plt.xlabel('Time Step')
 plt.ylabel('Temperature')
 plt.legend()
-plt.savefig(setting.path_daily_image + 'weather_lstm_temp.png')
+plt.savefig(setting.path_daily_image + 'weather_lstm_rh.png')
 plt.show()

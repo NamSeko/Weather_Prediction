@@ -65,7 +65,6 @@ def split_data(df, train_size=train_size, val_size=val_size, test_size=test_size
     if not os.path.exists(path):
         os.makedirs(path)
     
-    joblib.dump(scaler, '../data/scaler.save')
     train_df = pd.DataFrame(train_df, columns=df.columns, index=df.index[:train_end])
     val_df = pd.DataFrame(val_df, columns=df.columns, index=df.index[train_end:val_end])
     test_df = pd.DataFrame(test_df, columns=df.columns, index=df.index[val_end:])
@@ -82,9 +81,11 @@ if __name__ == "__main__":
     
     daily_data_temp = df_daily[['temperature_2m_mean (°C)', 'soil_temperature_0_to_7cm_mean (°C)', 'et0_fao_evapotranspiration_sum (mm)', 'relative_humidity_2m_mean (%)', 'soil_moisture_0_to_7cm_mean (m³/m³)']].copy()
     split_data(daily_data_temp, path='../data/daily/temp/')
+    joblib.dump(scaler, '../data/scaler_temp.save')
     
     daily_data_rh = df_daily[['relative_humidity_2m_mean (%)', 'soil_moisture_0_to_7cm_mean (m³/m³)', 'cloud_cover_mean (%)', 'temperature_2m_mean (°C)', 'soil_temperature_0_to_7cm_mean (°C)', 'et0_fao_evapotranspiration_sum (mm)']].copy()
     split_data(daily_data_rh, path='../data/daily/rh/')
+    joblib.dump(scaler, '../data/scaler_rh.save')
     
     # Hourly data
     df_hourly = pd.read_csv('../data/data_hourly-2023_2025.csv', skiprows=2)
@@ -94,3 +95,4 @@ if __name__ == "__main__":
     
     hourly_data = df_hourly[['temperature_2m (°C)', 'soil_temperature_0_to_7cm (°C)', 'et0_fao_evapotranspiration (mm)', 'relative_humidity_2m (%)', 'soil_moisture_0_to_7cm (m³/m³)']].copy()
     split_data(hourly_data, path='../data/hourly/')
+    joblib.dump(scaler, '../data/scaler_hourly.save')
