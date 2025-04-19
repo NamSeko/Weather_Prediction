@@ -13,9 +13,9 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-scaler = setting.scaler_rh
-train_path = setting.train_daily_rh_path
-val_path = setting.val_daily_rh_path
+scaler = setting.scaler_temp
+train_path = setting.train_daily_temp_path
+val_path = setting.val_daily_temp_path
 path_image = setting.path_daily_image
 
 
@@ -78,7 +78,7 @@ for epoch in range(num_epochs):
     print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}, Val Loss: {val_loss:.4f}')
  
 # Save the model
-setting.save_model(model, 'weather_lstm_rh.pth')
+setting.save_model(model, 'weather_lstm_temp.pth')
 
 plt.figure(figsize=(12, 6))
 plt.plot(train_loss, label='Train Loss')
@@ -92,5 +92,5 @@ plt.tight_layout()
 
 if not os.path.exists(path_image):
     os.makedirs(path_image)
-plt.savefig(path_image+'loss_plot_rh.png')
+plt.savefig(path_image+'loss_plot_temp.png')
 plt.show() 
