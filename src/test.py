@@ -1,7 +1,5 @@
 import numpy as np
 import torch
-from model.WeatherLSTM import WeatherLSTM
-import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
 import setting
@@ -13,10 +11,10 @@ warnings.filterwarnings("ignore")
 device = setting.device
 print(f"Using device: {device}")
 
-data_train = pd.read_csv(setting.train_daily_temp_path)
-data_val = pd.read_csv(setting.val_daily_temp_path)
-test_data = pd.read_csv(setting.test_daily_temp_path)
-scaler = setting.scaler_temp
+data_train = pd.read_csv(setting.train_path)
+data_val = pd.read_csv(setting.val_path)
+test_data = pd.read_csv(setting.test_path)
+scaler = setting.scaler
 
 train = data_train.copy()
 val = data_val.copy()
@@ -36,9 +34,10 @@ batch_size = setting.batch_size  # Number of samples per batch
 
 seq_length = setting.seq_length  # Length of the input sequence
 
-model = setting.LSTM_model.to(device)
+# model = setting.LSTM_model.to(device)
+model = setting.Transformer_model.to(device)
 
-state_dict = torch.load('./model/weather_lstm_temp.pth', map_location=device)
+state_dict = torch.load('./model/'+setting.path, map_location=device)
 model.load_state_dict(state_dict)
 model.eval()
 
@@ -83,20 +82,13 @@ data_df = pd.DataFrame(data={'Prediction': predictions, 'Actual': y_test}, index
 train_df = pd.DataFrame(data={'Train': y_train}, index=train.index)
 val_df = pd.DataFrame(data={'Validation': y_val}, index=val.index)
 # Plot the predictions and actual values
-plt.figure(figsize=(20, 20))
-plt.subplot(2, 1, 1)
+plt.figure(figsize=(12, 10))
 plt.plot(data_df['Prediction'], label='Predicted', color='red')
 plt.plot(data_df['Actual'], label='Actual', color='blue')
 plt.title('Weather Prediction')
 plt.xlabel('Time Step')
 plt.ylabel('Temperature')
 plt.legend()
-plt.subplot(2, 1, 2)
-plt.plot(train_df, label='Train', color='blue')
-plt.plot(val_df, label='Validation', color='orange')
-plt.title('Weather Prediction')
-plt.xlabel('Time Step')
-plt.ylabel('Temperature')
-plt.legend()
-plt.savefig(setting.path_daily_image + 'weather_lstm_temp.png')
+# plt.savefig(setting.images_path + 'weather_lstm_rh.png')
+plt.savefig(setting.images_path + 'weather_transformer_rh.png')
 plt.show()

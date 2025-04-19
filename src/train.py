@@ -1,11 +1,8 @@
-from model.WeatherLSTM import WeatherLSTM
 import torch
 import torch.optim as optim
 import torch.nn as nn
-import numpy as np
 import pandas as pd
 import os
-import joblib
 import matplotlib.pyplot as plt
 import setting
 from split_data import create_inout_sequences
@@ -13,10 +10,10 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-scaler = setting.scaler_temp
-train_path = setting.train_daily_temp_path
-val_path = setting.val_daily_temp_path
-path_image = setting.path_daily_image
+scaler = setting.scaler
+train_path = setting.train_path
+val_path = setting.val_path
+path_image = setting.images_path
 
 
 train_data = pd.read_csv(train_path)
@@ -34,7 +31,10 @@ seq_length = setting.seq_length  # Length of the input sequence
 
 num_epochs = setting.num_epochs  # Number of epochs to train the model
 
-model = setting.LSTM_model.to(device)
+# model = setting.LSTM_model.to(device)
+model = setting.Transformer_model.to(device)
+
+
 # Define the model, loss function, and optimizer
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -78,7 +78,7 @@ for epoch in range(num_epochs):
     print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}, Val Loss: {val_loss:.4f}')
  
 # Save the model
-setting.save_model(model, 'weather_lstm_temp.pth')
+setting.save_model(model)
 
 plt.figure(figsize=(12, 6))
 plt.plot(train_loss, label='Train Loss')
@@ -92,5 +92,6 @@ plt.tight_layout()
 
 if not os.path.exists(path_image):
     os.makedirs(path_image)
-plt.savefig(path_image+'loss_plot_temp.png')
+# plt.savefig(path_image+'loss_lstm_rh.png')
+plt.savefig(path_image+'loss_transformer_rh.png')
 plt.show() 
