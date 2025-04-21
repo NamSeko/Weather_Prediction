@@ -93,5 +93,5 @@ plt.tight_layout()
 if not os.path.exists(path_image):
     os.makedirs(path_image)
 # plt.savefig(path_image+'loss_lstm_rh.png')
-plt.savefig(path_image+'loss_transformer_rh.png')
+plt.savefig(path_image+'loss_transformer_temp.png')
 plt.show() 
