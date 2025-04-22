@@ -21,8 +21,15 @@ class PositionalEncoding(nn.Module):
 
 
 class WeatherTransformer(nn.Module):
-    def __init__(self, input_size, d_model, nhead, num_layers, output_size, dropout=0.1):
+    def __init__(self, input_size=5, d_model=64, nhead=2, num_layers=2, output_size=1, dropout=0.1):
         super().__init__()
+        self.input_size = input_size
+        self.d_model = d_model
+        self.nhead = nhead
+        self.num_layers = num_layers
+        self.output_size = output_size
+        self.d_model = d_model
+        
         self.embedding = nn.Linear(input_size, d_model)
         self.pos_encoder = PositionalEncoding(d_model)
         

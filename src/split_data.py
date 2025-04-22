@@ -74,25 +74,25 @@ def split_data(df, train_size=train_size, val_size=val_size, test_size=test_size
 
 if __name__ == "__main__":
     # Daily data
-    df_daily = pd.read_csv('../data/data_daily-2010_2025.csv', skiprows=2)
+    df_daily = pd.read_csv('./data/data_daily-2010_2025.csv', skiprows=2)
     df_daily['time'] = pd.to_datetime(df_daily['time'], format='%Y-%m-%d')
     df_daily = df_daily.set_index('time')
     df_daily = df_daily.sort_index(ascending=True)
     
     daily_data_temp = df_daily[['temperature_2m_mean (°C)', 'soil_temperature_0_to_7cm_mean (°C)', 'et0_fao_evapotranspiration_sum (mm)', 'relative_humidity_2m_mean (%)', 'soil_moisture_0_to_7cm_mean (m³/m³)']].copy()
-    split_data(daily_data_temp, path='../data/daily/temp/')
-    joblib.dump(scaler, '../data/scaler_temp.save')
+    split_data(daily_data_temp, path='./data/daily/temp/')
+    joblib.dump(scaler, './data/scaler_temp.save')
     
     daily_data_rh = df_daily[['relative_humidity_2m_mean (%)', 'soil_moisture_0_to_7cm_mean (m³/m³)', 'cloud_cover_mean (%)', 'temperature_2m_mean (°C)', 'soil_temperature_0_to_7cm_mean (°C)', 'et0_fao_evapotranspiration_sum (mm)']].copy()
-    split_data(daily_data_rh, path='../data/daily/rh/')
-    joblib.dump(scaler, '../data/scaler_rh.save')
+    split_data(daily_data_rh, path='./data/daily/rh/')
+    joblib.dump(scaler, './data/scaler_rh.save')
     
     # Hourly data
-    df_hourly = pd.read_csv('../data/data_hourly-2023_2025.csv', skiprows=2)
+    df_hourly = pd.read_csv('./data/data_hourly-2023_2025.csv', skiprows=2)
     df_hourly['time'] = pd.to_datetime(df_hourly['time'], format='ISO8601')
     df_hourly = df_hourly.set_index('time')
     df_hourly = df_hourly.sort_index(ascending=True)
     
     hourly_data = df_hourly[['temperature_2m (°C)', 'soil_temperature_0_to_7cm (°C)', 'et0_fao_evapotranspiration (mm)', 'relative_humidity_2m (%)', 'soil_moisture_0_to_7cm (m³/m³)']].copy()
-    split_data(hourly_data, path='../data/hourly/')
-    joblib.dump(scaler, '../data/scaler_hourly.save')
+    split_data(hourly_data, path='./data/hourly/')
+    joblib.dump(scaler, './data/scaler_hourly.save')

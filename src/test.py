@@ -34,8 +34,8 @@ batch_size = setting.batch_size  # Number of samples per batch
 
 seq_length = setting.seq_length  # Length of the input sequence
 
-# model = setting.LSTM_model.to(device)
-model = setting.Transformer_model.to(device)
+model = setting.LSTM_model.to(device)
+# model = setting.Transformer_model.to(device)
 
 state_dict = torch.load('./model/'+setting.path, map_location=device)
 model.load_state_dict(state_dict)
@@ -90,5 +90,5 @@ plt.xlabel('Time Step')
 plt.ylabel('Temperature')
 plt.legend()
 # plt.savefig(setting.images_path + 'weather_lstm_rh.png')
-plt.savefig(setting.images_path + 'weather_transformer_temp.png')
+plt.savefig(setting.images_path + 'weather_lstm_temp.png')
 plt.show()

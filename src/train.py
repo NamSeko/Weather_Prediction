@@ -31,8 +31,8 @@ seq_length = setting.seq_length  # Length of the input sequence
 
 num_epochs = setting.num_epochs  # Number of epochs to train the model
 
-# model = setting.LSTM_model.to(device)
-model = setting.Transformer_model.to(device)
+model = setting.LSTM_model.to(device)
+# model = setting.Transformer_model.to(device)
 
 
 # Define the model, loss function, and optimizer
@@ -92,6 +92,6 @@ plt.tight_layout()
 
 if not os.path.exists(path_image):
     os.makedirs(path_image)
-# plt.savefig(path_image+'loss_lstm_rh.png')
-plt.savefig(path_image+'loss_transformer_temp.png')
+plt.savefig(path_image+'loss_lstm_temp.png')
+# plt.savefig(path_image+'loss_transformer_temp.png')
 plt.show() 
