@@ -37,7 +37,7 @@ seq_length = setting.seq_length  # Length of the input sequence
 model = setting.LSTM_model.to(device)
 # model = setting.Transformer_model.to(device)
 
-state_dict = torch.load('./model/'+setting.path, map_location=device)
+state_dict = torch.load('./src/model/'+setting.path, map_location=device)
 model.load_state_dict(state_dict)
 model.eval()
 

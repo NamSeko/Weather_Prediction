@@ -22,40 +22,62 @@ device = setting.device
 
 st.title("Weather Forecasting")
 
-LSTM_model = st.checkbox("LSTM model!")
-Transformer_model = st.checkbox("Transformer model!")
-model = None
-if LSTM_model:
-    from src.model.WeatherLSTM import WeatherLSTM
-    model = WeatherLSTM(
-        input_size=input_size,
-        hidden_size=hidden_size,
-        output_size=output_size,
-        num_layers=num_layers,
-        dropout=dropout
-    ).to(device)
-    model.load_state_dict(torch.load('./src/model/daily/weather_lstm_temp.pth'))
-    st.caption("LSTM model selected !!!")
-    st.image('./src/image/daily/loss_lstm_temp.png', caption='LSTM model loss')
-    st.image('./src/image/daily/weather_lstm_temp.png', caption='LSTM model architecture')
-elif Transformer_model:
-    from src.model.WeatherTransformer import WeatherTransformer
-    model = WeatherTransformer(
-        input_size=input_size,
-        d_model=d_model,
-        nhead=num_heads,
-        num_layers=num_layers_transformer,
-        output_size=output_size,
-        dropout=dropout
-    ).to(device)
-    model.load_state_dict(torch.load('./src/model/daily/weather_transformer_temp.pth'))
-    st.caption("Transformer model selected !!!")
-    st.image('./src/image/daily/loss_transformer_temp.png', caption='Transformer model loss')
-    st.image('./src/image/daily/weather_transformer_temp.png', caption='Transformer model architecture')
-elif LSTM_model and Transformer_model:
-    st.error("Please select only one model!")
-    st.stop()
-else:
-    st.error("Please select a model!")
-    st.stop()
+model_type = st.selectbox("Select Model Type", ("LSTM", "Transformer"))
+
+st.write(f"You selected: {model_type}")
+st.write("## Hyperparameters")
+st.write(f"Input Size: {input_size}")
+st.write(f"Hidden Size: {hidden_size}")
+st.write(f"Number of Layers: {num_layers}")
+st.write(f"Output Size: {output_size}")
+st.write(f"Learning Rate: {learning_rate}")
+st.write(f"Batch Size: {batch_size}")
+st.write(f"Sequence Length: {seq_length}")
+st.write(f"Model Dimension: {d_model}")
+st.write(f"Number of Heads: {num_heads}")
+st.write(f"Number of Transformer Layers: {num_layers_transformer}")
+st.write(f"Dropout Rate: {dropout}")
+st.write(f"Device: {device}")
+
+st.write("## Model Summary")
+if model_type == "LSTM":
+    model = setting.LSTM_model
+    st.write(model)
+elif model_type == "Transformer":
+    model = setting.Transformer_model
+    st.write(model)
     
+st.write("## Model Training")
+if st.button("Train Model"):
+    # Add your training code here
+    st.write("Training started...")
+    # Call your training function here
+    # train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs)
+    st.write("Training completed!")
+    st.write("## Model Evaluation")
+    # Add your evaluation code here
+    st.write("Evaluation started...")
+    # Call your evaluation function here
+    # evaluate_model(model, test_loader)
+    st.write("Evaluation completed!")
+    st.write("## Model Saving")
+    # Add your model saving code here
+    st.write("Saving model...")
+    # Call your model saving function here
+    # save_model(model, path)
+    st.write("Model saved!")
+    st.write("## Model Loading")
+    # Add your model loading code here
+    st.write("Loading model...")
+    # Call your model loading function here
+    # load_model(model, path)
+    st.write("Model loaded!")
+    st.write("## Model Prediction")
+    # Add your prediction code here
+    st.write("Making predictions...")
+    # Call your prediction function here
+    # predictions = predict(model, test_loader)
+    st.write("Predictions completed!")
+    st.write("## Results")
+    # Add your results code here
+    st.write("Displaying results...")
