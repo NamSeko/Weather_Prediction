@@ -5,6 +5,7 @@ import pandas as pd
 import setting
 from split_data import create_inout_sequences
 import warnings
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 warnings.filterwarnings("ignore")
 
@@ -34,8 +35,8 @@ batch_size = setting.batch_size  # Number of samples per batch
 
 seq_length = setting.seq_length  # Length of the input sequence
 
-model = setting.LSTM_model.to(device)
-# model = setting.Transformer_model.to(device)
+# model = setting.LSTM_model.to(device)
+model = setting.Transformer_model.to(device)
 
 state_dict = torch.load('./src/model/'+setting.path, map_location=device)
 model.load_state_dict(state_dict)
@@ -90,5 +91,50 @@ plt.xlabel('Time Step')
 plt.ylabel('Temperature')
 plt.legend()
 # plt.savefig(setting.images_path + 'weather_lstm_rh.png')
-plt.savefig(setting.images_path + 'weather_lstm_temp.png')
+plt.savefig(setting.images_path + 'weather_transformer_temp.png')
 plt.show()
+
+def smape(y_true, y_pred):
+    """
+    Symmetric Mean Absolute Percentage Error
+    """
+    denominator = (np.abs(y_true) + np.abs(y_pred)) / 2
+    diff = np.abs(y_true - y_pred) / denominator
+    diff[denominator == 0] = 0  # tránh chia cho 0
+    return 100 * np.mean(diff)
+
+def mape(y_true, y_pred):
+    """
+    Mean Absolute Percentage Error
+    """
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    mask = y_true != 0  # tránh chia cho 0
+    return np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
+
+def evaluate_model(y_true, y_pred, name=""):
+    """
+    Đánh giá mô hình với các metric phổ biến trong dự báo thời tiết
+    """
+    mae = mean_absolute_error(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    r2 = r2_score(y_true, y_pred)
+    mape_val = mape(y_true, y_pred)
+    smape_val = smape(y_true, y_pred)
+
+    print(f"Kết quả đánh giá cho mô hình: {name}")
+    print(f"MAE   : {mae:.4f}")
+    print(f"RMSE  : {rmse:.4f}")
+    print(f"R²    : {r2:.4f}")
+    print(f"MAPE  : {mape_val:.2f}%")
+    print(f"SMAPE : {smape_val:.2f}%")
+    
+    # return {
+    #     "MAE": mae,
+    #     "RMSE": rmse,
+    #     "R2": r2,
+    #     "MAPE": mape_val,
+    #     "SMAPE": smape_val
+    # }
+
+# evaluate_model(y_test, predictions, name="LSTM")
+evaluate_model(y_test, predictions, name="Transformer")

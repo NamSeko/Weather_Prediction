@@ -39,59 +39,70 @@ model = setting.LSTM_model.to(device)
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-X_train, y_train = create_inout_sequences(train_data, seq_length)
-X_val, y_val = create_inout_sequences(val_data, seq_length)
+def create_dataloader(train_data, val_data, seq_length, batch_size):
+    X_train, y_train = create_inout_sequences(train_data, seq_length)
+    X_val, y_val = create_inout_sequences(val_data, seq_length)
 
-train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
-val_dataset = torch.utils.data.TensorDataset(X_val, y_val)
+    train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
+    val_dataset = torch.utils.data.TensorDataset(X_val, y_val)
 
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
-val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+
+    return train_loader, val_loader
 
 # Training loop
-train_loss = []
-val_history_loss = []
-for epoch in range(num_epochs):
-    model.train()
-    total_loss = 0
-    for i, (X_batch, y_batch) in enumerate(train_loader):
-        optimizer.zero_grad()
-        y_pred = model(X_batch)
-        loss = criterion(y_pred, y_batch.view(-1, 1))
-        loss.backward()
-        optimizer.step()
-        total_loss += loss.item()
-    
-    total_loss /= len(train_loader)
-    train_loss.append(total_loss)
-
-    # Validation
-    model.eval()
-    val_loss = 0
-    with torch.no_grad():
-        for X_batch, y_batch in val_loader:
+def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs):
+    train_loss = []
+    val_history_loss = []
+    for epoch in range(num_epochs):
+        model.train()
+        total_loss = 0
+        for i, (X_batch, y_batch) in enumerate(train_loader):
+            optimizer.zero_grad()
             y_pred = model(X_batch)
-            val_loss += criterion(y_pred, y_batch.view(-1, 1)).item()
+            loss = criterion(y_pred, y_batch.view(-1, 1))
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        
+        total_loss /= len(train_loader)
+        train_loss.append(total_loss)
 
-    val_loss /= len(val_loader)
-    val_history_loss.append(val_loss)
-    print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}, Val Loss: {val_loss:.4f}')
+        # Validation
+        model.eval()
+        val_loss = 0
+        with torch.no_grad():
+            for X_batch, y_batch in val_loader:
+                y_pred = model(X_batch)
+                val_loss += criterion(y_pred, y_batch.view(-1, 1)).item()
+
+        val_loss /= len(val_loader)
+        val_history_loss.append(val_loss)
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}, Val Loss: {val_loss:.4f}')
  
-# Save the model
-setting.save_model(model)
+    # Save the model
+    setting.save_model(model)
 
-plt.figure(figsize=(12, 6))
-plt.plot(train_loss, label='Train Loss')
-plt.plot(val_history_loss, label='Validation Loss')
-plt.title('Train and Validation Loss')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.legend()
-plt.grid()
-plt.tight_layout()
+    plt.figure(figsize=(12, 6))
+    plt.plot(train_loss, label='Train Loss')
+    plt.plot(val_history_loss, label='Validation Loss')
+    plt.title('Train and Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
 
-if not os.path.exists(path_image):
-    os.makedirs(path_image)
-plt.savefig(path_image+'loss_lstm_temp.png')
-# plt.savefig(path_image+'loss_transformer_temp.png')
-plt.show() 
+    if not os.path.exists(path_image):
+        os.makedirs(path_image)
+    plt.savefig(path_image+'loss_lstm_temp.png')
+    # plt.savefig(path_image+'loss_transformer_temp.png')
+    plt.show() 
+    
+if __name__ == "__main__":
+    # Create dataloaders
+    train_loader, val_loader = create_dataloader(train_data, val_data, seq_length, batch_size)
+
+    # Train the model
+    train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs)
