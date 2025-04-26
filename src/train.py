@@ -35,8 +35,8 @@ seq_length = setting.seq_length  # Length of the input sequence
 
 num_epochs = setting.num_epochs  # Number of epochs to train the model
 
-model = setting.LSTM_model.to(device)
-# model = setting.Transformer_model.to(device)
+# model = setting.LSTM_model.to(device)
+model = setting.Transformer_model.to(device)
 
 
 # Define the model, loss function, and optimizer
@@ -88,7 +88,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
 
         val_loss /= len(val_loader)
         val_history_loss.append(val_loss)
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}, Val Loss: {val_loss:.4f}')
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {total_loss:.4f}, Val Loss: {val_loss:.4f}')
  
     # Save the model
     setting.save_model(model)
@@ -105,8 +105,8 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
 
     if not os.path.exists(path_image):
         os.makedirs(path_image)
-    plt.savefig(path_image+'loss_lstm.png')
-    # plt.savefig(path_image+'loss_transformer_temp.png')
+    # plt.savefig(path_image+'loss_lstm.png')
+    plt.savefig(path_image+'loss_transformer.png')
     plt.show() 
     
 if __name__ == "__main__":

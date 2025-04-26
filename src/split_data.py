@@ -36,7 +36,8 @@ def create_inout_sequences(data, seq_length):
     return X_tensor, y_tensor
 
 def create_inout_sequences_2feature(data, seq_length):
-    data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d')
+    # data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d')
+    data['time'] = pd.to_datetime(data['time'], format='ISO8601')
     columns = data.columns[1:]
     data = data[columns].copy()
     data = data.values
@@ -119,6 +120,6 @@ if __name__ == "__main__":
     df_hourly = df_hourly.set_index('time')
     df_hourly = df_hourly.sort_index(ascending=True)
     
-    hourly_data = df_hourly[['temperature_2m (°C)', 'soil_temperature_0_to_7cm (°C)', 'et0_fao_evapotranspiration (mm)', 'relative_humidity_2m (%)', 'soil_moisture_0_to_7cm (m³/m³)']].copy()
+    hourly_data = df_hourly[['temperature_2m (°C)', 'relative_humidity_2m (%)']].copy()
     split_data(hourly_data, path='./data/hourly/')
     joblib.dump(scaler, './data/scaler_hourly.save')

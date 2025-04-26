@@ -17,22 +17,14 @@ warnings.filterwarnings("ignore")
 device = setting.device
 print(f"Using device: {device}")
 
-data_train = pd.read_csv(setting.train_path)
-data_val = pd.read_csv(setting.val_path)
 test_data = pd.read_csv(setting.test_path)
 scaler = setting.scaler
 
-train = data_train.copy()
-val = data_val.copy()
 test = test_data.copy()
-train['time'] = pd.to_datetime(train['time'], format='%Y-%m-%d')
-val['time'] = pd.to_datetime(val['time'], format='%Y-%m-%d')
-test['time'] = pd.to_datetime(test['time'], format='%Y-%m-%d')
-train = train.set_index('time')
-val = val.set_index('time')
+# test['time'] = pd.to_datetime(test['time'], format='%Y-%m-%d')
+test['time'] = pd.to_datetime(test['time'], format='ISO8601')
+
 test = test.set_index('time')
-train = train.sort_index(ascending=True)
-val = val.sort_index(ascending=True)
 test = test.sort_index(ascending=True)
 
 # Define hyperparameters
@@ -40,8 +32,8 @@ batch_size = setting.batch_size  # Number of samples per batch
 
 seq_length = setting.seq_length  # Length of the input sequence
 
-model = setting.LSTM_model.to(device)
-# model = setting.Transformer_model.to(device)
+# model = setting.LSTM_model.to(device)
+model = setting.Transformer_model.to(device)
 
 state_dict = torch.load('./src/model/'+setting.path, map_location=device)
 model.load_state_dict(state_dict)
@@ -77,7 +69,6 @@ predictions = scaler.inverse_transform(predictions)
 # y_test = np.concatenate((y_test, extra_feature), axis=1)
 y_test = scaler.inverse_transform(test[setting.seq_length:])
 # y_test = y_test[:, 0]
-print(predictions.shape, y_test.shape)
 
 data_df = pd.DataFrame(data={'Prediction Temp': predictions[:, 0], 'Actual Temp': y_test[:, 0], 'Prediction Rh': predictions[:, 1], 'Actual Rh': y_test[:, 1]}, index=test.index[-predictions.shape[0]:])
 # Plot the predictions and actual values
@@ -89,9 +80,10 @@ def plot_temp(data_df):
     plt.xlabel('Time Step')
     plt.ylabel('Temperature')
     plt.legend()
-    plt.savefig(setting.images_path + 'weather_lstm_temp.png')
-    # # plt.savefig(setting.images_path + 'weather_transformer_temp_rh.png')
+    # plt.savefig(setting.images_path + 'weather_lstm_temp.png')
+    plt.savefig(setting.images_path + 'weather_transformer_temp.png')
     plt.show()
+    
 def plot_rh(data_df):
     plt.figure(figsize=(12, 10))
     plt.plot(data_df['Prediction Rh'], label='Predicted', color='red')
@@ -100,8 +92,8 @@ def plot_rh(data_df):
     plt.xlabel('Time Step')
     plt.ylabel('Relative Humidity')
     plt.legend()
-    plt.savefig(setting.images_path + 'weather_lstm_rh.png')
-    # # plt.savefig(setting.images_path + 'weather_transformer_temp_rh.png')
+    # plt.savefig(setting.images_path + 'weather_lstm_rh.png')
+    plt.savefig(setting.images_path + 'weather_transformer_rh.png')
     plt.show()
 
 def evaluate_model(y_true, y_pred, name=""):
