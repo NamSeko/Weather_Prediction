@@ -1,16 +1,18 @@
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import joblib
 import pandas as pd
-import os
 import warnings
-import setting
 import torch
 
-train_size = setting.train_size
-val_size = setting.val_size
-test_size = setting.test_size
-device = setting.device
+train_size = 0.8
+val_size = 0.1
+test_size = 0.1
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 warnings.filterwarnings("ignore")
 
@@ -26,6 +28,23 @@ def create_inout_sequences(data, seq_length):
     for i in range(seq_length, L):
         train_seq = data[i-seq_length:i]
         train_label = data[i][0]  # Assuming the label is the first feature
+        X.append(train_seq)
+        y.append(train_label)
+    X, y = np.array(X), np.array(y)
+    X_tensor = torch.tensor(X, dtype=torch.float32).to(device)
+    y_tensor = torch.tensor(y, dtype=torch.float32).to(device)
+    return X_tensor, y_tensor
+
+def create_inout_sequences_2feature(data, seq_length):
+    data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d')
+    columns = data.columns[1:]
+    data = data[columns].copy()
+    data = data.values
+    X, y = [], []
+    L = len(data)
+    for i in range(seq_length, L):
+        train_seq = data[i-seq_length:i]
+        train_label = data[i]  # Assuming the label is the first feature
         X.append(train_seq)
         y.append(train_label)
     X, y = np.array(X), np.array(y)
@@ -79,13 +98,20 @@ if __name__ == "__main__":
     df_daily = df_daily.set_index('time')
     df_daily = df_daily.sort_index(ascending=True)
     
+    # Temperature data
     daily_data_temp = df_daily[['temperature_2m_mean (°C)', 'soil_temperature_0_to_7cm_mean (°C)', 'et0_fao_evapotranspiration_sum (mm)', 'relative_humidity_2m_mean (%)', 'soil_moisture_0_to_7cm_mean (m³/m³)']].copy()
     split_data(daily_data_temp, path='./data/daily/temp/')
     joblib.dump(scaler, './data/scaler_temp.save')
     
+    # Relative Humidity data
     daily_data_rh = df_daily[['relative_humidity_2m_mean (%)', 'soil_moisture_0_to_7cm_mean (m³/m³)', 'cloud_cover_mean (%)', 'temperature_2m_mean (°C)', 'soil_temperature_0_to_7cm_mean (°C)', 'et0_fao_evapotranspiration_sum (mm)']].copy()
     split_data(daily_data_rh, path='./data/daily/rh/')
     joblib.dump(scaler, './data/scaler_rh.save')
+    
+    # Temperature and Relative Humidity data
+    daily_data_temp_rh = df_daily[['temperature_2m_mean (°C)', 'relative_humidity_2m_mean (%)']].copy()
+    split_data(daily_data_temp_rh, path='./data/daily/temp_rh/')
+    joblib.dump(scaler, './data/scaler_temp_rh.save')
     
     # Hourly data
     df_hourly = pd.read_csv('./data/data_hourly-2023_2025.csv', skiprows=2)

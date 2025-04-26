@@ -1,11 +1,9 @@
-import streamlit as st
-import sys
-import torch
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import streamlit as st
 from src import setting
-
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 input_size = setting.input_size
 hidden_size = setting.hidden_size

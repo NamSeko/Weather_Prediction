@@ -1,12 +1,16 @@
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import torch
 import torch.optim as optim
 import torch.nn as nn
 import pandas as pd
-import os
 import matplotlib.pyplot as plt
-import setting
-from split_data import create_inout_sequences
 import warnings
+
+from src import setting
+from src.split_data import create_inout_sequences, create_inout_sequences_2feature
 
 warnings.filterwarnings("ignore")
 
@@ -40,8 +44,11 @@ criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 def create_dataloader(train_data, val_data, seq_length, batch_size):
-    X_train, y_train = create_inout_sequences(train_data, seq_length)
-    X_val, y_val = create_inout_sequences(val_data, seq_length)
+    # X_train, y_train = create_inout_sequences(train_data, seq_length)
+    # X_val, y_val = create_inout_sequences(val_data, seq_length)
+    
+    X_train, y_train = create_inout_sequences_2feature(train_data, seq_length)
+    X_val, y_val = create_inout_sequences_2feature(val_data, seq_length)
 
     train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
     val_dataset = torch.utils.data.TensorDataset(X_val, y_val)
@@ -61,7 +68,8 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
         for i, (X_batch, y_batch) in enumerate(train_loader):
             optimizer.zero_grad()
             y_pred = model(X_batch)
-            loss = criterion(y_pred, y_batch.view(-1, 1))
+            # loss = criterion(y_pred, y_batch.view(-1, 1))
+            loss = criterion(y_pred, y_batch)
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
@@ -75,7 +83,8 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
         with torch.no_grad():
             for X_batch, y_batch in val_loader:
                 y_pred = model(X_batch)
-                val_loss += criterion(y_pred, y_batch.view(-1, 1)).item()
+                # val_loss += criterion(y_pred, y_batch.view(-1, 1)).item()
+                val_loss += criterion(y_pred, y_batch).item()
 
         val_loss /= len(val_loader)
         val_history_loss.append(val_loss)
@@ -96,7 +105,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
 
     if not os.path.exists(path_image):
         os.makedirs(path_image)
-    plt.savefig(path_image+'loss_lstm_temp.png')
+    plt.savefig(path_image+'loss_lstm.png')
     # plt.savefig(path_image+'loss_transformer_temp.png')
     plt.show() 
     
