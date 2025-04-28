@@ -18,8 +18,8 @@ warnings.filterwarnings("ignore")
 
 scaler = MinMaxScaler(feature_range=(-1, 1))
 
-def create_inout_sequences(data, seq_length):
-    data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d')
+def create_inout_sequences_hourly(data, seq_length):
+    data['time'] = pd.to_datetime(data['time'], format='ISO8601')
     columns = data.columns[1:]
     data = data[columns].copy()
     data = data.values
@@ -27,7 +27,7 @@ def create_inout_sequences(data, seq_length):
     L = len(data)
     for i in range(seq_length, L):
         train_seq = data[i-seq_length:i]
-        train_label = data[i][0]  # Assuming the label is the first feature
+        train_label = data[i]  # Assuming the label is the first feature
         X.append(train_seq)
         y.append(train_label)
     X, y = np.array(X), np.array(y)
@@ -35,9 +35,8 @@ def create_inout_sequences(data, seq_length):
     y_tensor = torch.tensor(y, dtype=torch.float32).to(device)
     return X_tensor, y_tensor
 
-def create_inout_sequences_2feature(data, seq_length):
-    # data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d')
-    data['time'] = pd.to_datetime(data['time'], format='ISO8601')
+def create_inout_sequences_daily(data, seq_length):
+    data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d')
     columns = data.columns[1:]
     data = data[columns].copy()
     data = data.values
@@ -94,32 +93,19 @@ def split_data(df, train_size=train_size, val_size=val_size, test_size=test_size
 
 if __name__ == "__main__":
     # Daily data
-    df_daily = pd.read_csv('./data/data_daily-2010_2025.csv', skiprows=2)
+    df_daily = pd.read_csv('./data/daily_data.csv', skiprows=2)
     df_daily['time'] = pd.to_datetime(df_daily['time'], format='%Y-%m-%d')
     df_daily = df_daily.set_index('time')
     df_daily = df_daily.sort_index(ascending=True)
     
-    # Temperature data
-    daily_data_temp = df_daily[['temperature_2m_mean (°C)', 'soil_temperature_0_to_7cm_mean (°C)', 'et0_fao_evapotranspiration_sum (mm)', 'relative_humidity_2m_mean (%)', 'soil_moisture_0_to_7cm_mean (m³/m³)']].copy()
-    split_data(daily_data_temp, path='./data/daily/temp/')
-    joblib.dump(scaler, './data/scaler_temp.save')
-    
-    # Relative Humidity data
-    daily_data_rh = df_daily[['relative_humidity_2m_mean (%)', 'soil_moisture_0_to_7cm_mean (m³/m³)', 'cloud_cover_mean (%)', 'temperature_2m_mean (°C)', 'soil_temperature_0_to_7cm_mean (°C)', 'et0_fao_evapotranspiration_sum (mm)']].copy()
-    split_data(daily_data_rh, path='./data/daily/rh/')
-    joblib.dump(scaler, './data/scaler_rh.save')
-    
-    # Temperature and Relative Humidity data
-    daily_data_temp_rh = df_daily[['temperature_2m_mean (°C)', 'relative_humidity_2m_mean (%)']].copy()
-    split_data(daily_data_temp_rh, path='./data/daily/temp_rh/')
-    joblib.dump(scaler, './data/scaler_temp_rh.save')
+    split_data(df_daily, path='./data/daily/')
+    joblib.dump(scaler, './data/scaler_daily.save')
     
     # Hourly data
-    df_hourly = pd.read_csv('./data/data_hourly-2023_2025.csv', skiprows=2)
+    df_hourly = pd.read_csv('./data/hourly_data.csv', skiprows=2)
     df_hourly['time'] = pd.to_datetime(df_hourly['time'], format='ISO8601')
     df_hourly = df_hourly.set_index('time')
     df_hourly = df_hourly.sort_index(ascending=True)
     
-    hourly_data = df_hourly[['temperature_2m (°C)', 'relative_humidity_2m (%)']].copy()
-    split_data(hourly_data, path='./data/hourly/')
+    split_data(df_hourly, path='./data/hourly/')
     joblib.dump(scaler, './data/scaler_hourly.save')
