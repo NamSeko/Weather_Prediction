@@ -8,47 +8,25 @@ import torch.nn as nn
 import pandas as pd
 import matplotlib.pyplot as plt
 import warnings
+from tqdm import tqdm
 
 from src import setting
-from src.split_data import create_inout_sequences, create_inout_sequences_2feature
+from src.split_data import create_inout_sequences_hourly, create_inout_sequences_daily
+from src.model.WeatherLSTM import WeatherLSTM
+from src.model.WeatherTransformer import WeatherTransformer
 
 warnings.filterwarnings("ignore")
 
-scaler = setting.scaler
-train_path = setting.train_path
-val_path = setting.val_path
-path_image = setting.images_path
-
-
-train_data = pd.read_csv(train_path)
-val_data = pd.read_csv(val_path)
-
-device = setting.device
-print(f"Using device: {device}")
-
-
-# Define hyperparameters
-learning_rate = setting.learning_rate  # Learning rate for the optimizer
-batch_size = setting.batch_size  # Number of samples per batch
-
-seq_length = setting.seq_length  # Length of the input sequence
-
-num_epochs = setting.num_epochs  # Number of epochs to train the model
-
-# model = setting.LSTM_model.to(device)
-model = setting.Transformer_model.to(device)
-
-
-# Define the model, loss function, and optimizer
-criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-
-def create_dataloader(train_data, val_data, seq_length, batch_size):
-    # X_train, y_train = create_inout_sequences(train_data, seq_length)
-    # X_val, y_val = create_inout_sequences(val_data, seq_length)
+def create_dataloader(train_path, val_path, seq_length, batch_size):
+    train_data = pd.read_csv(train_path)
+    val_data = pd.read_csv(val_path)
     
-    X_train, y_train = create_inout_sequences_2feature(train_data, seq_length)
-    X_val, y_val = create_inout_sequences_2feature(val_data, seq_length)
+    if 'daily' in train_path:
+        X_train, y_train = create_inout_sequences_daily(train_data, seq_length)
+        X_val, y_val = create_inout_sequences_daily(val_data, seq_length)
+    elif 'hourly' in train_path:
+        X_train, y_train = create_inout_sequences_hourly(train_data, seq_length)
+        X_val, y_val = create_inout_sequences_hourly(val_data, seq_length)
 
     train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
     val_dataset = torch.utils.data.TensorDataset(X_val, y_val)
@@ -58,11 +36,22 @@ def create_dataloader(train_data, val_data, seq_length, batch_size):
 
     return train_loader, val_loader
 
+def save_model(model, path):
+    """
+    Save the model to a file.
+
+    Args:
+        model (torch.nn.Module): The model to save.
+        path (str): The path to save the model.
+    """
+    torch.save(model.state_dict(), './src/model/' + path)
+    print(f"Model saved !")
+    
 # Training loop
-def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs):
+def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, path_model, path_image):
     train_loss = []
     val_history_loss = []
-    for epoch in range(num_epochs):
+    for epoch in tqdm(range(num_epochs)):
         model.train()
         total_loss = 0
         for i, (X_batch, y_batch) in enumerate(train_loader):
@@ -88,12 +77,15 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
 
         val_loss /= len(val_loader)
         val_history_loss.append(val_loss)
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {total_loss:.4f}, Val Loss: {val_loss:.4f}')
- 
-    # Save the model
-    setting.save_model(model)
+        # print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {total_loss:.4f}, Val Loss: {val_loss:.4f}')
 
-    plt.figure(figsize=(12, 6))
+    min_loss = min(val_history_loss)
+    print(f"Loss: {min_loss:.4f}")
+    print("Finish training!!!")
+    # Save the model
+    save_model(model, path_model)
+
+    plt.figure(figsize=(10, 5))
     plt.plot(train_loss, label='Train Loss')
     plt.plot(val_history_loss, label='Validation Loss')
     plt.title('Train and Validation Loss')
@@ -105,13 +97,78 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
 
     if not os.path.exists(path_image):
         os.makedirs(path_image)
-    # plt.savefig(path_image+'loss_lstm.png')
-    plt.savefig(path_image+'loss_transformer.png')
-    plt.show() 
     
-if __name__ == "__main__":
-    # Create dataloaders
-    train_loader, val_loader = create_dataloader(train_data, val_data, seq_length, batch_size)
+    name_image = path_model.replace('.pth', '.png')
+    name_image = name_image.replace('/', '_')
+    plt.savefig(path_image+name_image)
+    
+if __name__ == "__main__":   
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
 
-    # Train the model
-    train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs)
+    # Define hyperparameters
+    learning_rate = 0.0001  # Learning rate for the optimizer
+    batch_size = 64  # Number of samples per batch
+    seq_length = 60  # Length of the input sequence
+    num_epochs = 150  # Number of epochs to train the model
+    hidden_size = 64  # Number of features in the hidden state
+    num_layers = 2  # Number of recurrent layers
+    d_model = 64  # Dimension of the model for Transformer
+    num_heads = 2  # Number of attention heads for Transformer
+    num_layers_transformer = 2  # Number of layers for Transformer
+    dropout = 0.3  # Dropout rate for Transformer
+    
+    # Train with daily data
+    train_daily_path = setting.train_daily_path
+    val_daily_path = setting.val_daily_path
+    scaler = setting.scaler_daily
+    path_daily_image = setting.images_daily_path
+    
+    df = pd.read_csv(train_daily_path)
+    columns = df.columns[1:]
+    input_size = len(columns)  # Number of features in the input data
+    output_size = len(columns)  # Number of features in the output data
+    
+    train_loader, val_loader = create_dataloader(train_daily_path, val_daily_path, seq_length, batch_size)
+    
+    print(f"Training LSTM model on daily data...")
+    LSTM_model = WeatherLSTM(input_size=input_size, hidden_size=hidden_size, output_size=output_size, num_layers=num_layers, dropout=dropout).to(device)
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(LSTM_model.parameters(), lr=learning_rate)
+    path_model = 'daily/lstm.pth'
+    train_model(LSTM_model, train_loader, val_loader, criterion, optimizer, num_epochs, path_model, path_daily_image)
+    
+    print(f"Training Transformer model on daily data...")
+    Transformer_model = WeatherTransformer(input_size=input_size, d_model=d_model, nhead=num_heads, num_layers=num_layers_transformer, output_size=output_size, dropout=dropout).to(device)
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(Transformer_model.parameters(), lr=learning_rate)
+    path_model = 'daily/transformer.pth'
+    train_model(Transformer_model, train_loader, val_loader, criterion, optimizer, num_epochs, path_model, path_daily_image)
+    
+    # Train with hourly data
+    train_hourly_path = setting.train_hourly_path
+    val_hourly_path = setting.val_hourly_path
+    scaler = setting.scaler_hourly
+    path_hourly_image = setting.images_hourly_path
+    
+    df = pd.read_csv(train_hourly_path)
+    columns = df.columns[1:]
+    input_size = len(columns)  # Number of features in the input data
+    output_size = len(columns)  # Number of features in the output data
+    
+    train_loader, val_loader = create_dataloader(train_hourly_path, val_hourly_path, seq_length, batch_size)
+    
+    print(f"Training LSTM model on hourly data...")
+    LSTM_model = WeatherLSTM(input_size=input_size, hidden_size=hidden_size, output_size=output_size, num_layers=num_layers, dropout=dropout).to(device)
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(LSTM_model.parameters(), lr=learning_rate)
+    path_model = 'hourly/lstm.pth'
+    train_model(LSTM_model, train_loader, val_loader, criterion, optimizer, num_epochs, path_model, path_hourly_image)
+    
+    print(f"Training Transformer model on hourly data...")
+    Transformer_model = WeatherTransformer(input_size=input_size, d_model=d_model, nhead=num_heads, num_layers=num_layers_transformer, output_size=output_size, dropout=dropout).to(device)
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(Transformer_model.parameters(), lr=learning_rate)
+    path_model = 'hourly/transformer.pth'
+    train_model(Transformer_model, train_loader, val_loader, criterion, optimizer, num_epochs, path_model, path_hourly_image)
+    
