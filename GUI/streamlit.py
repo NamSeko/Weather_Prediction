@@ -6,9 +6,7 @@ import streamlit as st
 import torch
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
+from datetime import datetime
 import plotly.express as px
 
 from src import setting
@@ -93,7 +91,7 @@ def load_data(scaler_hourly, scaler_daily):
     daily = pd.DataFrame(daily, columns=df_daily.columns, index=df_daily.index)
     return hourly, daily
 
-def take_file_input():
+def take_file_input(hourly=None, daily=None):
     uploaded_file = st.file_uploader("Tải lên file CSV 📂", type=['csv'])
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file, skiprows=2)
@@ -117,7 +115,12 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 take_file_input()
 
-hourly, daily = load_data(scaler_hourly, scaler_daily)
+# Kiểm tra xem đã load data sang file new_data.csv chưa
+if os.path.exists('data/new_data.csv'):
+    hourly, daily = load_data(scaler_hourly, scaler_daily)
+else:
+    st.warning("Please upload a CSV file first.")
+    st.stop()
 
 model = None
 box_model = st.selectbox("Select Model Type", ("Choose one Model", "LSTM", "Transformer"))
@@ -141,19 +144,6 @@ def get_input_seq(hourly_data, seq_length=seq_length):
     input_seq = hourly_data.values[-seq_length:]
     # input_daily_seq = daily_data.values[-seq_length:]
     return input_seq
-
-# Giờ cuối cùng trong data
-last_time = hourly.index[-1]
-last_time = pd.to_datetime(last_time, format='ISO8601')
-target_end_time = pd.Timestamp.now().normalize() + pd.Timedelta(days=8)
-
-n_steps = int((target_end_time - last_time) / pd.Timedelta(hours=1))
-
-input_seq = get_input_seq(hourly, seq_length=seq_length)
-input_seq = torch.tensor(input_seq, dtype=torch.float32).to(device)
-# input_daily_seq = torch.tensor(input_daily_seq, dtype=torch.float32).to(device)
-input_seq = input_seq.unsqueeze(0)  # [1, 60, features]
-# input_daily_seq = input_daily_seq.unsqueeze(0)  # [1, 60, features]
 
 def predict(model, input_seq, n_steps, scaler):
     predictions = []
@@ -187,17 +177,30 @@ def update_data(path='data/update_data.csv', df_forecast=None):
         # Ghi đè file
         df_combined.to_csv(path, index=True, float_format='%.1f')
     
-def plot_forecast(df):
+def plot_forecast(df, title):
     fig = px.line(df, 
                   x=df.index, 
                   y=['temperature_2m (°C)', 'relative_humidity_2m (%)'],
-                  markers=False, title='Weather Forecast')
+                  markers=False, title=title)
     fig.update_traces(mode='lines')
     fig.update_layout(xaxis_title='Time', yaxis_title='Value', hovermode='x unified')
     st.plotly_chart(fig, use_container_width=True)
 
 
 if model is not None:
+    # Giờ cuối cùng trong data
+    last_time = hourly.index[-1]
+    last_time = pd.to_datetime(last_time, format='ISO8601')
+    target_end_time = pd.Timestamp.now().normalize() + pd.Timedelta(days=8)
+
+    n_steps = int((target_end_time - last_time) / pd.Timedelta(hours=1))
+
+    input_seq = get_input_seq(hourly, seq_length=seq_length)
+    input_seq = torch.tensor(input_seq, dtype=torch.float32).to(device)
+    # input_daily_seq = torch.tensor(input_daily_seq, dtype=torch.float32).to(device)
+    input_seq = input_seq.unsqueeze(0)  # [1, 60, features]
+    # input_daily_seq = input_daily_seq.unsqueeze(0)  # [1, 60, features]
+    
     # Dự đoán dữ liệu hàng giờ
     predictions = predict(model, input_seq, n_steps, scaler_hourly)
 
@@ -209,7 +212,7 @@ if model is not None:
     df_forecast = df_forecast.sort_index(ascending=True)
     df_forecast = df_forecast.round(1)
 
-    plot_forecast(df_forecast)
+    plot_forecast(df_forecast, 'Weather Forecast')
 
     df_forecast.index = pd.to_datetime(df_forecast.index, format='ISO8601')
     df_forecast.index = df_forecast.index.strftime('%Y-%m-%dT%H:%M')
@@ -223,21 +226,85 @@ if model is not None:
     df_hourly, df_daily = split_data(path='data/update_data.csv')
 
     # Hiển thị list các ngày trong dự đoán (có thể chọn)
-    st.write("Select the date to view the forecast:")
     today_idx = df_daily.index.date.tolist().index(current_time.date())
-    st.write(f"Today: {today_idx}")
     limited_dates = df_daily.index.date[today_idx-7:today_idx + 8]  # Chỉ lấy 7 ngày tiếp theo
     today_idx = limited_dates.tolist().index(current_time.date())
     selected_date = st.selectbox("Select Date", limited_dates, index=today_idx)
     # Sau khi chọn ngày, hiển thị dự đoán cho ngày đó với nhiệt độ, độ ẩm trung bình và min, max và nhiệt độ, độ ẩm từng giờ của ngày đó
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    # st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.write(f"Weather forecast for {selected_date}:")
     df_daily_selected = df_daily[df_daily.index.date == selected_date]
-    df_hourly_selected = df_hourly[df_hourly.index.date == selected_date]
-
-    st.write("Daily Forecast:")
-    st.dataframe(df_daily_selected, use_container_width=True)
-
-    st.write("Hourly Forecast:")
-    st.dataframe(df_hourly_selected, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    df_hourly_selected = df_hourly[df_hourly.index.date == selected_date]    
+    
+    def get_weather_icon(temp_c, humidity):
+        if humidity > 90 and temp_c < 26:
+            return "🌧️"
+        elif 85 <= humidity <= 90 and 26 <= temp_c <= 28:
+            return "🌦️"
+        elif temp_c >= 30 and humidity > 70:
+            return "☀️"
+        elif 28 <= temp_c <= 32 and 70 < humidity <= 85:
+            return "⛅"
+        else:
+            return "🌤️"
+        
+    opacity = None
+    if selected_date >= current_time.date():
+        opacity = 1.0
+    else:
+        opacity = 0.5
+        
+    st.markdown(
+        f"""
+        <div style="text-align: center; font-size: 20px; font-weight: bold; opacity: {opacity};">
+            <div style="margin-bottom: 10px;">
+                <span>
+                    {get_weather_icon(df_daily_selected['temperature_2m_mean (°C)'].values[0], df_daily_selected['relative_humidity_2m_mean (%)'].values[0])}
+                </span>
+                <span style="color: #FF5733;">
+                    {df_daily_selected['temperature_2m_mean (°C)'].values[0]}°C
+                </span>
+            </div>
+            <div>
+                <span style="margin-right: 20px;">
+                    <b>H</b>: {df_daily_selected['temperature_2m_max (°C)'].values[0]}°C
+                </span>
+                <span style="margin-left: 20px;">
+                    <b>L</b>: {df_daily_selected['temperature_2m_min (°C)'].values[0]}°C
+                </span>
+            </div>
+            <div style="margin-top: 10px; color: blue;">
+                {df_daily_selected['relative_humidity_2m_mean (%)'].values[0]}%
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    # Hiển thị dự đoán hàng giờ theo từng giờ với nhiệt độ và độ ẩm
+    for hour, temp, humidity in zip(df_hourly_selected.index, df_hourly_selected['temperature_2m (°C)'], df_hourly_selected['relative_humidity_2m (%)']):
+        hour = int(hour.strftime('%H'))
+        if selected_date > current_time.date():
+            opacity = 1.0
+        elif selected_date == current_time.date():
+            if hour < current_time.hour:
+                opacity = 0.5
+            else:
+                opacity = 1.0
+        else:
+                opacity = 0.5
+        icon = get_weather_icon(temp, humidity)
+        st.markdown(
+            f"""
+            <div style="text-align: center; font-size: 15px; font-weight: bold; opacity: {opacity};">
+                <div style=" margin-bottom: 10px;">
+                    <span style="font-size: 20px;">{icon}</span>
+                    <span style="margin-right: 20px;">{hour}h</span>
+                    <span style="margin-right: 20px; color: red;">{temp}°C</span>
+                    <span style="color: blue;">{humidity}%</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    
+    plot_forecast(df_hourly_selected, 'Hourly Weather Forecast')
