@@ -25,19 +25,12 @@ current_time = datetime.now()
 scaler_daily = setting.scaler_daily
 scaler_hourly = setting.scaler_hourly
 
-learning_rate = 0.0001  # Learning rate for the optimizer
-batch_size = 64  # Number of samples per batch
-seq_length = 60  # Length of the input sequence
-hidden_size = 64  # Number of features in the hidden state
-num_layers = 2  # Number of recurrent layers
-d_model = 64  # Dimension of the model for Transformer
-num_heads = 2  # Number of attention heads for Transformer
-num_layers_transformer = 2  # Number of layers for Transformer
-dropout = 0.3  # Dropout rate for Transformer
-# input_daily_size = 4  # Number of features in the input data
-# output_daily_size = 4  # Number of features in the output data
-input_size = 2  # Number of features in the input data
-output_size = 2  # Number of features in the output data
+param_lstm = setting.param_lstm
+param_transformer = setting.param_transformer
+
+seq_length = 72  # Length of the input sequence
+batch_size = 64  # Batch size for training
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 st.set_page_config(
@@ -128,13 +121,22 @@ if box_model == "LSTM":
     st.session_state.model = "LSTM"
     # model_daily = WeatherLSTM(input_size=input_daily_size, hidden_size=hidden_size, output_size=output_daily_size, num_layers=num_layers, dropout=dropout).to(device)
     # model_daily.load_state_dict(torch.load('src/model/daily/lstm.pth', map_location=device))
-    model = WeatherLSTM(input_size=input_size, hidden_size=hidden_size, output_size=output_size, num_layers=num_layers, dropout=dropout).to(device)
+    model = WeatherLSTM(input_size=param_lstm['input_size'][0], 
+                        hidden_size=param_lstm['hidden_size'], 
+                        output_size=param_lstm['output_size'][0], 
+                        num_layers=param_lstm['num_layers'], 
+                        dropout=param_lstm['dropout']).to(device)
     model.load_state_dict(torch.load('src/model/hourly/lstm.pth', map_location=device))
 elif box_model == "Transformer":
     st.session_state.model = "Transformer"
     # model_daily = WeatherTransformer(input_size=input_daily_size, d_model=d_model, nhead=num_heads, num_layers=num_layers_transformer, output_size=output_daily_size, dropout=dropout).to(device)
     # model_daily.load_state_dict(torch.load('src/model/daily/transformer.pth', map_location=device))
-    model = WeatherTransformer(input_size=input_size, d_model=d_model, nhead=num_heads, num_layers=num_layers_transformer, output_size=output_size, dropout=dropout).to(device)
+    model = WeatherTransformer(input_size=param_transformer['input_size'][0], 
+                               d_model=param_transformer['d_model'], 
+                               nhead=param_transformer['num_head'], 
+                               num_layers=param_transformer['num_layers_transformer'], 
+                               output_size=param_transformer['output_size'][0], 
+                               dropout=param_transformer['dropout']).to(device)
     model.load_state_dict(torch.load('src/model/hourly/transformer.pth', map_location=device))
 else:
     model = None

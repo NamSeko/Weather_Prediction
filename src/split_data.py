@@ -94,6 +94,7 @@ def split_data(df, train_size=train_size, val_size=val_size, test_size=test_size
 if __name__ == "__main__":
     # Daily data
     df_daily = pd.read_csv('./data/daily_data.csv', skiprows=2)
+    df_daily.dropna(inplace=True)
     df_daily['time'] = pd.to_datetime(df_daily['time'], format='%Y-%m-%d')
     df_daily = df_daily.set_index('time')
     df_daily = df_daily.sort_index(ascending=True)
@@ -103,6 +104,7 @@ if __name__ == "__main__":
     
     # Hourly data
     df_hourly = pd.read_csv('./data/hourly_data.csv', skiprows=2)
+    df_hourly.dropna(inplace=True)
     df_hourly['time'] = pd.to_datetime(df_hourly['time'], format='ISO8601')
     df_hourly = df_hourly.set_index('time')
     df_hourly = df_hourly.sort_index(ascending=True)
