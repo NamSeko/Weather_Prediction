@@ -129,7 +129,7 @@ model = None
 box_model = st.selectbox("Select Model Type", ("Choose one Model", "LSTM", "Transformer"))
 if box_model == "LSTM":
     st.session_state.model = "LSTM"
-    model_path = 'src/model/hourly/lstm.pth'
+    model_path = 'lstm.pth'
     gdrive_file_id = '1GoZosMc81iXtxxIA-9ecPT0N4bYAEPef'
 
     download_model_if_not_exists(model_path, gdrive_file_id)
@@ -141,10 +141,10 @@ if box_model == "LSTM":
                         num_layers=param_lstm['num_layers'], 
                         dropout=param_lstm['dropout']).to(device)
     # model.load_state_dict(torch.load('src/model/hourly/lstm.pth', map_location=device))
-    model.load_state_dict(torch.load('src/model/hourly/lstm.pth', map_location='cpu'))
+    model.load_state_dict(torch.load('lstm.pth', map_location='cpu'))
 elif box_model == "Transformer":
     st.session_state.model = "Transformer"
-    model_path = 'src/model/hourly/transformer.pth'
+    model_path = 'transformer.pth'
     gdrive_file_id = '1RHCdRiN7qH25ausNjkoZ0pMycgFuNzQR'
 
     download_model_if_not_exists(model_path, gdrive_file_id)
@@ -157,7 +157,7 @@ elif box_model == "Transformer":
                                output_size=param_transformer['output_size'][0], 
                                dropout=param_transformer['dropout']).to(device)
     # model.load_state_dict(torch.load('src/model/hourly/transformer.pth', map_location=device))
-    model.load_state_dict(torch.load('src/model/hourly/transformer.pth', map_location='cpu'))
+    model.load_state_dict(torch.load('transformer.pth', map_location='cpu'))
 else:
     model = None
     
