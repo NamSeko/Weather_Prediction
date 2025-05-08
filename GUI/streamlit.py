@@ -9,6 +9,8 @@ import numpy as np
 from datetime import datetime
 import plotly.express as px
 import gdown
+import warnings
+warnings.filterwarnings("ignore")
 
 from src import setting
 from src.model.WeatherLSTM import WeatherLSTM
