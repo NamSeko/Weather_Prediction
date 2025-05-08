@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import plotly.express as px
+import gdown
 
 from src import setting
 from src.model.WeatherLSTM import WeatherLSTM
@@ -108,6 +109,15 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 take_file_input()
 
+def download_model_if_not_exists(file_path, gdrive_id):
+    if not os.path.exists(file_path):
+        print(f"👉 Model chưa có, đang tải từ Google Drive...")
+        url = f'https://drive.google.com/uc?id={gdrive_id}'
+        gdown.download(url, file_path, quiet=False)
+        print("✅ Tải model xong rồi nhé!")
+    else:
+        print("✅ Model đã có sẵn, không cần tải lại.")
+        
 # Kiểm tra xem đã load data sang file new_data.csv chưa
 if os.path.exists('data/new_data.csv'):
     hourly, daily = load_data(scaler_hourly, scaler_daily)
@@ -119,6 +129,10 @@ model = None
 box_model = st.selectbox("Select Model Type", ("Choose one Model", "LSTM", "Transformer"))
 if box_model == "LSTM":
     st.session_state.model = "LSTM"
+    model_path = 'src/model/hourly/lstm.pth'
+    gdrive_file_id = '1GoZosMc81iXtxxIA-9ecPT0N4bYAEPef'
+
+    download_model_if_not_exists(model_path, gdrive_file_id)
     # model_daily = WeatherLSTM(input_size=input_daily_size, hidden_size=hidden_size, output_size=output_daily_size, num_layers=num_layers, dropout=dropout).to(device)
     # model_daily.load_state_dict(torch.load('src/model/daily/lstm.pth', map_location=device))
     model = WeatherLSTM(input_size=param_lstm['input_size'][0], 
@@ -130,6 +144,10 @@ if box_model == "LSTM":
     model.load_state_dict(torch.load('src/model/hourly/lstm.pth', map_location='cpu'))
 elif box_model == "Transformer":
     st.session_state.model = "Transformer"
+    model_path = 'src/model/hourly/transformer.pth'
+    gdrive_file_id = '1RHCdRiN7qH25ausNjkoZ0pMycgFuNzQR'
+
+    download_model_if_not_exists(model_path, gdrive_file_id)
     # model_daily = WeatherTransformer(input_size=input_daily_size, d_model=d_model, nhead=num_heads, num_layers=num_layers_transformer, output_size=output_daily_size, dropout=dropout).to(device)
     # model_daily.load_state_dict(torch.load('src/model/daily/transformer.pth', map_location=device))
     model = WeatherTransformer(input_size=param_transformer['input_size'][0], 
