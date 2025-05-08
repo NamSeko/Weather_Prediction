@@ -112,11 +112,11 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
         val_losses.append(avg_val_loss)
 
         # Update scheduler (ReduceLROnPlateau)
-        # Step scheduler if using ReduceLROnPlateau
-        if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-            scheduler.step(val_loss)
-        else:
-            scheduler.step()
+        if scheduler is not None:
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(val_loss)
+            else:
+                scheduler.step()
 
         epoch_loop.set_postfix(train_loss=avg_train_loss, val_loss=avg_val_loss)
         
@@ -158,96 +158,85 @@ if __name__ == "__main__":
 
     param_lstm = setting.param_lstm
     param_transformer = setting.param_transformer
+    
     # Define hyperparameters
     num_epochs = 150  # Number of epochs to train the model
-    seq_length = 72  # Length of the input sequence
     batch_size = 64  # Batch size for training
     patience = 20  # Early stopping patience
+    
     # Train with daily data
     train_daily_path = setting.train_daily_path
     val_daily_path = setting.val_daily_path
-    scaler = setting.scaler_daily
+    seq_length = 60  # Length of the input sequence
+    train_daily_loader, val_daily_loader = create_dataloader(train_daily_path, val_daily_path, seq_length, batch_size)
+    num_training_daily_steps = len(train_daily_loader) * num_epochs
     path_daily_image = setting.images_daily_path
-    
-    train_loader, val_loader = create_dataloader(train_daily_path, val_daily_path, seq_length, batch_size)
-    num_training_steps = len(train_loader) * num_epochs
-        
-    print(f"Training LSTM model on daily data...")
-    LSTM_model = WeatherLSTM(input_size=param_lstm['input_size'][1],
-                             hidden_size=param_lstm['hidden_size'], 
-                             output_size=param_lstm['output_size'][1], 
-                             num_layers=param_lstm['num_layers'], 
-                             dropout=param_lstm['dropout']).to(device)
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(LSTM_model.parameters(), lr=param_lstm['learning_rate'])
-    scheduler = get_scheduler(
-        name="linear",
-        optimizer=optimizer,
-        num_warmup_steps=int(num_training_steps * 0.1),  # 10% of training steps
-        num_training_steps=num_training_steps,
-    )
-    path_model = 'daily/lstm.pth'
-    train_model(LSTM_model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs, patience, device, path_model, path_daily_image)
-    
-    print(f"Training Transformer model on daily data...")
-    Transformer_model = WeatherTransformer(input_size=param_transformer['input_size'][1], 
-                                           d_model=param_transformer['d_model'], 
-                                           nhead=param_transformer['num_head'], 
-                                           num_layers=param_transformer['num_layers_transformer'], 
-                                           output_size=param_transformer['output_size'][1], 
-                                           dropout=param_transformer['dropout']).to(device)
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(Transformer_model.parameters(), lr=param_transformer['learning_rate'])
-    scheduler = get_scheduler(
-        name="linear",
-        optimizer=optimizer,
-        num_warmup_steps=int(num_training_steps * 0.1),  # 10% of training steps
-        num_training_steps=num_training_steps,
-    )
-    path_model = 'daily/transformer.pth'
-    train_model(Transformer_model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs, patience, device, path_model, path_daily_image)
     
     # Train with hourly data
     train_hourly_path = setting.train_hourly_path
     val_hourly_path = setting.val_hourly_path
-    scaler = setting.scaler_hourly
+    seq_length = 72  # Length of the input sequence
+    train_hourly_loader, val_hourly_loader = create_dataloader(train_hourly_path, val_hourly_path, seq_length, batch_size)
+    num_training_hourly_steps = len(train_hourly_loader) * num_epochs
     path_hourly_image = setting.images_hourly_path
-    
-    train_loader, val_loader = create_dataloader(train_hourly_path, val_hourly_path, seq_length, batch_size)
-    num_training_steps = len(train_loader) * num_epochs
-    
-    print(f"Training LSTM model on hourly data...")
-    LSTM_model = WeatherLSTM(input_size=param_lstm['input_size'][0], 
-                             hidden_size=param_lstm['hidden_size'], 
-                             output_size=param_lstm['output_size'][0], 
-                             num_layers=param_lstm['num_layers'], 
-                             dropout=param_lstm['dropout']).to(device)
+
+        
+    print(f"Training LSTM model on daily data...")
+    LSTM_model = WeatherLSTM(input_size=param_lstm['input_size'][1],
+                            hidden_size=param_lstm['hidden_size'], 
+                            output_size=param_lstm['output_size'][1], 
+                            num_layers=param_lstm['num_layers'], 
+                            dropout=param_lstm['dropout']).to(device)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(LSTM_model.parameters(), lr=param_lstm['learning_rate'])
-    scheduler = get_scheduler(
-        name="linear",
-        optimizer=optimizer,
-        num_warmup_steps=int(num_training_steps * 0.1),  # 10% of training steps
-        num_training_steps=num_training_steps,
-    )
-    path_model = 'hourly/lstm.pth'
-    train_model(LSTM_model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs, patience, device, path_model, path_hourly_image)
+    scheduler = None
+    path_model = 'daily/lstm.pth'
+    train_model(LSTM_model, train_daily_loader, val_daily_loader, criterion, optimizer, scheduler, num_epochs, patience, device, path_model, path_daily_image)
     
-    print(f"Training Transformer model on hourly data...")
-    Transformer_model = WeatherTransformer(input_size=param_transformer['input_size'][0], 
-                                           d_model=param_transformer['d_model'], 
-                                           nhead=param_transformer['num_head'], 
-                                           num_layers=param_transformer['num_layers_transformer'], 
-                                           output_size=param_transformer['output_size'][0], 
-                                           dropout=param_transformer['dropout']).to(device)
+    print(f"Training Transformer model on daily data...")
+    Transformer_model = WeatherTransformer(input_size=param_transformer['input_size'][1], 
+                                        d_model=param_transformer['d_model'], 
+                                        nhead=param_transformer['num_head'], 
+                                        num_layers=param_transformer['num_layers_transformer'], 
+                                        output_size=param_transformer['output_size'][1], 
+                                        dropout=param_transformer['dropout']).to(device)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(Transformer_model.parameters(), lr=param_transformer['learning_rate'])
     scheduler = get_scheduler(
         name="linear",
         optimizer=optimizer,
-        num_warmup_steps=int(num_training_steps * 0.1),  # 10% of training steps
-        num_training_steps=num_training_steps,
+        num_warmup_steps=int(num_training_daily_steps * 0.1),  # 10% of training steps
+        num_training_steps=num_training_daily_steps,
+    )
+    path_model = 'daily/transformer.pth'
+    train_model(Transformer_model, train_daily_loader, val_daily_loader, criterion, optimizer, scheduler, num_epochs, patience, device, path_model, path_daily_image)
+    
+    print(f"Training LSTM model on hourly data...")
+    LSTM_model = WeatherLSTM(input_size=param_lstm['input_size'][0], 
+                            hidden_size=param_lstm['hidden_size'], 
+                            output_size=param_lstm['output_size'][0], 
+                            num_layers=param_lstm['num_layers'], 
+                            dropout=param_lstm['dropout']).to(device)
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(LSTM_model.parameters(), lr=param_lstm['learning_rate'])
+    scheduler = None
+    path_model = 'hourly/lstm.pth'
+    train_model(LSTM_model, train_hourly_loader, val_hourly_loader, criterion, optimizer, scheduler, num_epochs, patience, device, path_model, path_hourly_image)
+    
+    print(f"Training Transformer model on hourly data...")
+    Transformer_model = WeatherTransformer(input_size=param_transformer['input_size'][0], 
+                                        d_model=param_transformer['d_model'], 
+                                        nhead=param_transformer['num_head'], 
+                                        num_layers=param_transformer['num_layers_transformer'], 
+                                        output_size=param_transformer['output_size'][0], 
+                                        dropout=param_transformer['dropout']).to(device)
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(Transformer_model.parameters(), lr=param_transformer['learning_rate'])
+    scheduler = get_scheduler(
+        name="linear",
+        optimizer=optimizer,
+        num_warmup_steps=int(num_training_hourly_steps * 0.1),  # 10% of training steps
+        num_training_steps=num_training_hourly_steps,
     )
     path_model = 'hourly/transformer.pth'
-    train_model(Transformer_model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs, patience, device, path_model, path_hourly_image)
-    
+    train_model(Transformer_model, train_hourly_loader, val_hourly_loader, criterion, optimizer, scheduler, num_epochs, patience, device, path_model, path_hourly_image)

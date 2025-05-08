@@ -29,11 +29,11 @@ test_size = 0.1
 # Ví dụ param grid cho LSTM
 param_lstm = {
     'input_size': [2, 4],
-    'hidden_size': 128,
+    'hidden_size': 64,
     'output_size': [2, 4],
     'num_layers': 3,
     'dropout': 0.2,
-    'learning_rate': 0.001,
+    'learning_rate': 0.0001,
 }
 
 param_transformer = {

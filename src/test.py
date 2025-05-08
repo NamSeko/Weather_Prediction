@@ -185,7 +185,6 @@ def predict_hourly(model, path_model, batch_size, seq_length, device):
 if __name__ == "__main__":
     # Hyperparameters
     batch_size = 64
-    seq_length = 72
     
     param_lstm = setting.param_lstm
     param_transformer = setting.param_transformer
@@ -194,6 +193,7 @@ if __name__ == "__main__":
     print(f"Using device: {device}")
     
     # Predict daily data
+    seq_length = 60
     # LSTM
     print("Predicting daily data with LSTM model...")
     model = WeatherLSTM(input_size=param_lstm['input_size'][1],
@@ -210,8 +210,10 @@ if __name__ == "__main__":
                                num_layers=param_transformer['num_layers_transformer'], 
                                output_size=param_transformer['output_size'][1], 
                                dropout=param_transformer['dropout']).to(device)    
-    predict_daily(model, './src/model/daily/transformer.pth', batch_size, seq_length, device)
+    # predict_daily(model, './src/model/daily/transformer.pth', batch_size, seq_length, device)
+    predict_daily(model, 'transformer.pth', batch_size, 14, device)
     # Predict hourly data
+    seq_length = 72
     # LSTM
     print("Predicting hourly data with LSTM model...")
     model = WeatherLSTM(input_size=param_lstm['input_size'][0],
