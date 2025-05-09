@@ -145,7 +145,7 @@ if box_model == "LSTM":
                         num_layers=param_lstm['num_layers'], 
                         dropout=param_lstm['dropout']).to(device)
     # model.load_state_dict(torch.load('src/model/hourly/lstm.pth', map_location=device))
-    model.load_state_dict(torch.load('/lstm.pth', map_location='cpu'))
+    model.load_state_dict(torch.load('/mount/src/weather_prediction/lstm.pth', map_location='cpu'))
 elif box_model == "Transformer":
     st.session_state.model = "Transformer"
     model = WeatherTransformer(input_size=param_transformer['input_size'][0], 
@@ -155,7 +155,7 @@ elif box_model == "Transformer":
                                output_size=param_transformer['output_size'][0], 
                                dropout=param_transformer['dropout']).to(device)
     # model.load_state_dict(torch.load('src/model/hourly/transformer.pth', map_location=device))
-    model.load_state_dict(torch.load('/transformer.pth', map_location='cpu'))
+    model.load_state_dict(torch.load('/mount/src/weather_prediction/transformer.pth', map_location='cpu'))
 else:
     model = None
     
