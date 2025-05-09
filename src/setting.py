@@ -28,20 +28,20 @@ test_size = 0.1
 
 # Ví dụ param grid cho LSTM
 param_lstm = {
-    'input_size': [2, 4],
+    'input_size': [11, 20],  # [hourly_features, daily_features]
     'hidden_size': 64,
-    'output_size': [2, 4],
+    'output_size': [2, 4],  # [hourly_outputs, daily_outputs]
     'num_layers': 3,
     'dropout': 0.2,
     'learning_rate': 0.0001,
 }
 
 param_transformer = {
-    'input_size': [2, 4],
+    'input_size': [11, 20],  # [hourly_features, daily_features]
     'd_model': 128,
     'num_head': 4,
     'num_layers_transformer': 4,
-    'output_size': [2, 4],
+    'output_size': [2, 4],  # [hourly_outputs, daily_outputs]
     'dropout': 0.1,
     'learning_rate': 0.0005,
 }

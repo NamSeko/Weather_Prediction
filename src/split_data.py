@@ -18,40 +18,6 @@ warnings.filterwarnings("ignore")
 
 scaler = MinMaxScaler(feature_range=(-1, 1))
 
-def create_inout_sequences_hourly(data, seq_length):
-    data['time'] = pd.to_datetime(data['time'], format='ISO8601')
-    columns = data.columns[1:]
-    data = data[columns].copy()
-    data = data.values
-    X, y = [], []
-    L = len(data)
-    for i in range(seq_length, L):
-        train_seq = data[i-seq_length:i]
-        train_label = data[i]  # Assuming the label is the first feature
-        X.append(train_seq)
-        y.append(train_label)
-    X, y = np.array(X), np.array(y)
-    X_tensor = torch.tensor(X, dtype=torch.float32).to(device)
-    y_tensor = torch.tensor(y, dtype=torch.float32).to(device)
-    return X_tensor, y_tensor
-
-def create_inout_sequences_daily(data, seq_length):
-    data['time'] = pd.to_datetime(data['time'], format='%Y-%m-%d')
-    columns = data.columns[1:]
-    data = data[columns].copy()
-    data = data.values
-    X, y = [], []
-    L = len(data)
-    for i in range(seq_length, L):
-        train_seq = data[i-seq_length:i]
-        train_label = data[i]  # Assuming the label is the first feature
-        X.append(train_seq)
-        y.append(train_label)
-    X, y = np.array(X), np.array(y)
-    X_tensor = torch.tensor(X, dtype=torch.float32).to(device)
-    y_tensor = torch.tensor(y, dtype=torch.float32).to(device)
-    return X_tensor, y_tensor
-
 def split_data(df, train_size=train_size, val_size=val_size, test_size=test_size, path='data/'):
     """
     Splits the DataFrame into train, validation, and test sets.
