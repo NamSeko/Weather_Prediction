@@ -2,7 +2,7 @@
 
 This project uses two main models — LSTM and Transformer — to predict temperature and humidity. The application is built with Streamlit for easy deployment and interactive visualization.
 
-URL Streamlit Website: https://weatherprediction-demo.streamlit.app
+URL Streamlit Website: https://weatherforecasting-22022594-namtt.streamlit.app
 
 ## Table of Contents
 - [Data Infomation](#data-information)

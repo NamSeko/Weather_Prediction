@@ -2,4 +2,3 @@ data/daily
 data/hourly
 data/daily_data.csv
 data/hourly_data.csv
-*.pth
