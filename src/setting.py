@@ -31,7 +31,7 @@ param_lstm = {
     'input_size': [11, 20],  # [hourly_features, daily_features]
     'hidden_size': 64,
     'output_size': [2, 4],  # [hourly_outputs, daily_outputs]
-    'num_layers': 3,
+    'num_layers': 2,
     'dropout': 0.2,
     'learning_rate': 0.0001,
 }

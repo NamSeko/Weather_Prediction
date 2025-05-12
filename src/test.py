@@ -221,7 +221,7 @@ def predict_daily(model, path_model, batch_size, seq_length, device):
     
     image_path = setting.images_daily_path
     name = 'LSTM' if 'lstm' in path_model else 'Transformer'
-    plot_predictions(df, image_path + f'daily_{name}_predictions.png', is_daily=True)
+    plot_predictions(df[-200:], image_path + f'daily_{name}_predictions.png', is_daily=True)
     evaluate_model(y_target, predictions, name, is_daily=True)
 
 def predict_hourly(model, path_model, batch_size, seq_length, device):
@@ -275,7 +275,7 @@ def predict_hourly(model, path_model, batch_size, seq_length, device):
     
     image_path = setting.images_hourly_path
     name = 'LSTM' if 'lstm' in path_model else 'Transformer'
-    plot_predictions(df, image_path + f'hourly_{name}_predictions.png', is_daily=False)
+    plot_predictions(df[-200:], image_path + f'hourly_{name}_predictions.png', is_daily=False)
     evaluate_model(y_target, predictions, name, is_daily=False)
 
 if __name__ == "__main__":

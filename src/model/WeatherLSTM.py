@@ -19,6 +19,8 @@ class WeatherLSTM(nn.Module):
         self.fc1 = nn.Linear(hidden_size, 32)
         self.fc2 = nn.Linear(32, 16)
         self.fc3 = nn.Linear(16, output_size)
+        self.dropout = nn.Dropout(dropout)
+        self.norm = nn.LayerNorm(32)
 
     def forward(self, x):
         out, _ = self.lstm1(x)  # LSTM layer 1
@@ -28,9 +30,10 @@ class WeatherLSTM(nn.Module):
 
         # Decode the hidden state of the last time step
         out = self.fc1(out)
-        out = F.relu(out)
+        out = self.norm(out)
+        out = F.leaky_relu(out)
         out = self.dropout(out)
         out = self.fc2(out)
-        out = F.relu(out)
+        out = F.leaky_relu(out)
         out = self.fc3(out)
         return out
