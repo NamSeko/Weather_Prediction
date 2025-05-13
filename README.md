@@ -4,6 +4,8 @@ This project uses two main models — LSTM and Transformer — to predict temper
 
 URL Streamlit Website: https://weatherforecasting-22022594-namtt.streamlit.app
 
+Video Demo: [link_video_demo](https://drive.google.com/file/d/1ukF0ahb24BNU62l1Vm16FcJLp4uFAebv/view?usp=sharing)
+
 ## Table of Contents
 - [Data Infomation](#data-information)
 - [Installation](#installation)
