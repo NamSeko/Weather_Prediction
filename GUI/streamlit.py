@@ -175,7 +175,8 @@ def get_input_seq(hourly_data, seq_length=seq_length):
     ]
     
     # Check for NaN values and handle them
-    X_data = processed_data[feature_columns].fillna(method='ffill').fillna(method='bfill').values
+    # X_data = processed_data[feature_columns].fillna(method='ffill').fillna(method='bfill').values
+    X_data = processed_data[feature_columns].ffill().bfill().values
     X_data = np.nan_to_num(X_data, nan=0.0, posinf=1e6, neginf=-1e6)
     
     # Create sequences for prediction
