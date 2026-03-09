@@ -277,7 +277,8 @@ def add_features(data, is_daily=True):
         data['temp_humidity_interaction'] = data['temperature_2m (°C)'] * data['relative_humidity_2m (%)']
     
     # Fill NaN values with forward fill
-    data = data.fillna(method='ffill')
+    # data = data.fillna(method='ffill')
+    data = data.ffill()
     
     return data
 
