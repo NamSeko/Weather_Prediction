@@ -6,3 +6,4 @@ joblib
 streamlit
 plotly
 gdown
+altair==4.2.2
